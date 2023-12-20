@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  database:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env.development
+    networks:
+      - my_network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - my_network
+    depends_on:
+      - database
+
+  backend:
+    build:
+      context: ../backend
+      target: dev
+    image: "backend:local-dev"
+    restart: always
+    volumes:
+      - ../backend:/app
+    env_file:
+      - .env.development
+    ports:
+      - "8000:8000"
+    networks:
+      - my_network
+    depends_on:
+      - database
+  
+  frontend:
+    build:
+      context: ../frontend
+      target: dev
+    image: "frontend:local-dev"
+    env_file:
+      - ../frontend/.env
+    volumes:
+      - ../frontend/src:/app/src:ro
+      - ../frontend/public:/app/public:ro
+      - ../backend/media:/app/public/media:ro # Temporary volume in fronend source code to read backend media files
+    ports:
+      - "3000:3000"
+    networks:
+      - my_network
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  my_network:

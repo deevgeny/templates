@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  database:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env.development
+    networks:
+      - my_network
+
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - database
+    networks:
+      - my_network
+
+  backend:
+    build:
+      context: ../backend
+      target: prod
+    image: "backend:local-prod"
+    restart: always
+    volumes:
+      - media:/app/media/
+      - static:/app/static/
+    env_file:
+      - .env.development
+    networks:
+      - my_network
+    depends_on:
+      - database
+
+  frontend:
+    build:
+      context: ../frontend
+      target: prod
+      args:
+        API_URL: $API_URL
+        API_PREFIX: $API_PREFIX
+        API_VERSION: $API_VERSION
+    image: "frontend:local-prod"
+    networks:
+      - my_network
+      - web
+    ports:
+      # "host:container"
+      - "3000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - static:/backend/static/
+      - media:/backend/media/
+    restart: always
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  static:
+  media:
+
+networks:
+  web:
+    internal: false
+  my_network:
+    internal: true

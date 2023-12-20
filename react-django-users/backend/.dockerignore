@@ -1,0 +1,8 @@
+venv
+Dockerfile
+setup.cfg
+db.sqlite3
+.gitignore
+.pytest_cache
+tests
+pytest.ini
